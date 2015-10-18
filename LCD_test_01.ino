@@ -30,9 +30,15 @@ byte UP_DOWN_ARROWS_CHAR[8] = {
 //define default factory settings
 #define DEFAULT_TRESHHOLD      10
 #define DEFAULT_BULB_A         1000
-#define DEFAULT_BULB_C         2
+#define DEFAULT_BULB_C         90
 #define DEFAULT_SHOOTING_TIME  700
 #define DEFAULT_SHOOTING_MODE  3
+
+#define SHOOTER_PIN 12
+#define TRIGGER_PIN A1
+
+#define MAX_LIGHTS  5
+#define BASE_UPDATE_INTERVAL 5000
 
 //define buttons
 #define btnRIGHT  0
@@ -110,7 +116,6 @@ int inc_menu (int menu_item, int max_items, int delta, int select_status_param)
   return menu_item;
 }
 
-
 int mainMenuItem;
 int treshHold;
 int bulbA;
@@ -119,13 +124,6 @@ int shootingTimeB;
 int shootingMode;
 int select_status;
 int reset_status;
-
-
-#define DEFAULT_TRESHHOLD      10
-#define DEFAULT_BULB_A         1000
-#define DEFAULT_BULB_C         90
-#define DEFAULT_SHOOTING_TIME  700
-#define DEFAULT_SHOOTING_MODE  3
 
 void write_settings()
 {
@@ -173,7 +171,6 @@ void set_LCD_setiing()
   analogWrite(LCD_BRIGHTNESS_PIN, 40);
   lcd.createChar(0, UP_DOWN_ARROWS_CHAR);
 
-  //lcd.autoscroll();
 }
 
 int read_LCD_buttons(int key_val)
@@ -474,6 +471,7 @@ int wait_for_keypress()
 
 void setup() {
   Serial.begin(9600);
+  pinMode(SHOOTER_PIN, OUTPUT);
   set_LCD_setiing();
   read_settings();
   mainMenuItem = mSetMode;
@@ -482,18 +480,89 @@ void setup() {
   LCD_print_working_screen();
 }
 
+int get_light_avg(int *lights)
+{
+  int light_avg = 0;
+  int light_acc = 0;
+  for (int i =0; i < MAX_LIGHTS; i++)
+  {
+    light_acc += lights[i];
+  }
+  
+  return (int) light_avg / MAX_LIGHTS;
+}
+
+void set_avg(int *lights, int avg_val)
+{
+  for (int i = 0; i < MAX_LIGHTS; i++ )
+  {
+    lights[i] = avg_val;
+  }
+}
+
+
 void long_exposure_on_flash()
 {
+  pout("long_exposure_on_flash wait");
+  int lightning_base = analogRead(TRIGGER_PIN);
+  int lightning_base_old = lightning_base;
+  int lights[MAX_LIGHTS];
+  //set_avg(lights, analogRead(TRIGGER_PIN));
+  unsigned long int refresh_base_timer = millis();
+  while (1)
+  {
+    //
+    int newLightningVal = analogRead(TRIGGER_PIN);
+    if (newLightningVal - lightning_base >= treshHold)
+    {
+      pout(newLightningVal);
+      pout(lightning_base);
+      
+      pout("take poict flash long");
+      take_picture(SHOOTER_PIN, bulbA, 500);
+      lightning_base = analogRead(TRIGGER_PIN);
+    }
+    if (millis() - refresh_base_timer > BASE_UPDATE_INTERVAL)
+    {
+      pout("10 sec");
+      pout(lightning_base);
+      lightning_base = newLightningVal;
+      refresh_base_timer = millis();
+    } 
+   delay(1000); 
+  }
 }
 
 void fast_shoots_on_flash()
 {
-  
+  int lightning_base = analogRead(TRIGGER_PIN);
+  while (1)
+  {
+    int newLightningVal = analogRead(TRIGGER_PIN);
+    if (newLightningVal - lightning_base > treshHold)
+    {
+      pout("take poict flash sort");
+      take_picture(SHOOTER_PIN, shootingTimeB, 500);
+    }
+  }
 }
 
 void sequential_long_exposure()
 {
-  
+  while (1)
+  {
+    pout("take pict seq long");
+    pout (SHOOTER_PIN);
+    take_picture(SHOOTER_PIN, bulbC * 1000L, 2000);
+  }
+}
+
+void take_picture(byte PIN, unsigned long delay_between, unsigned long delay_after)
+{
+  digitalWrite(PIN, HIGH);
+  delay(delay_between);
+  digitalWrite(PIN, LOW);
+  delay(delay_after);
 }
 
 void loop() {
