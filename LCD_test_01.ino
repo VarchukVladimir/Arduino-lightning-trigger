@@ -2,7 +2,6 @@
 #include <LiquidCrystal.h>
 
 
-LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
 
 byte UP_DOWN_ARROWS_CHAR[8] = {
   0b00100,
@@ -33,11 +32,11 @@ byte UP_DOWN_ARROWS_CHAR[8] = {
 #define DEFAULT_BULB_C         90
 #define DEFAULT_SHOOTING_TIME  700
 #define DEFAULT_SHOOTING_MODE  3
-
+//define pins
 #define SHOOTER_PIN 12
 #define TRIGGER_PIN A1
 
-#define MAX_LIGHTS  5
+//
 #define BASE_UPDATE_INTERVAL 5000
 
 //define buttons
@@ -66,55 +65,21 @@ byte UP_DOWN_ARROWS_CHAR[8] = {
 #define modeBULB_A        3
 #define modeFAST_SHOOT_B  2
 #define modeBULB_C        1
-
+//
 #define MAX_LINE  50
 char Line_1[MAX_LINE];
 char Line_2[MAX_LINE];
 
-void line_out(byte column, byte line, char *str)
-{
-  if (strlen(str) > LCD_WIDTH)
-    lcd.autoscroll();
-  else
-    lcd.noAutoscroll();
-  lcd.noAutoscroll();
-  lcd.setCursor(column, line);
-  lcd.print(str);
-}
+#define DEBUG
+//#undef DEBUG
+#ifdef DEBUG
+  #define pout(STR) Serial.println((STR))
+#else
+  #define pout(STR)
+#endif
 
-void line_out_special(byte column, byte line, byte symbol )
-{
-  lcd.setCursor(column, line);
-  lcd.write(byte(symbol));
-}
-
-#define pout(STR) Serial.println((STR))
-
-int inc_menu (int menu_item, int max_items, int delta, int select_status_param)
-{
-  if (SS_SELECTED == select_status_param)
-  {
-    pout("before");
-    pout(menu_item);
-    pout("max_items");
-    pout(max_items);
-    pout("delta");
-    pout(delta);
-    menu_item = menu_item + delta;
-    if ( abs(delta) > menu_item) 
-    { 
-      menu_item = max_items;
-    }
-    else
-    {
-      menu_item = menu_item % (max_items + abs(delta));
-      menu_item = menu_item == 0?menu_item + abs(delta):menu_item;
-    }
-    pout("after");
-    pout(menu_item);
-  }
-  return menu_item;
-}
+// Global variables  
+LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
 
 int mainMenuItem;
 int treshHold;
@@ -125,6 +90,11 @@ int shootingMode;
 int select_status;
 int reset_status;
 
+////////////////////////////////////////////////////////////////////
+// SETTINGS
+// default settings
+// read & write settings data to EEPROM
+////////////////////////////////////////////////////////////////////
 void write_settings()
 {
   int addr =0;
@@ -165,51 +135,56 @@ void set_default_factory_vals()
   shootingMode = modeBULB_A;
 }
 
+////////////////////////////////////////////////////////////////////
+// LCD functions 
+////////////////////////////////////////////////////////////////////
+
+void line_out(byte column, byte line, char *str)
+{
+  lcd.setCursor(column, line);
+  lcd.print(str);
+}
+
+void line_out_special(byte column, byte line, byte symbol )
+{
+  lcd.setCursor(column, line);
+  lcd.write(byte(symbol));
+}
+
 void set_LCD_setiing()
 {
   lcd.begin(LCD_WIDTH, LCD_HEIGHT);
   analogWrite(LCD_BRIGHTNESS_PIN, 40);
   lcd.createChar(0, UP_DOWN_ARROWS_CHAR);
-
-}
-
-int read_LCD_buttons(int key_val)
-{
-  if (key_val > 1000) return btnNONE; 
-  if (key_val < 50)   return btnRIGHT;  
-  if (key_val < 195)  return btnUP; 
-  if (key_val < 380)  return btnDOWN; 
-  if (key_val < 555)  return btnLEFT; 
-  if (key_val < 790)  return btnSELECT;   
-  return btnNONE;  // when all others fail, return this...
 }
 
 void LCD_print_screen()
 {
-  memset(Line_1, ' ', MAX_LINE);
-  memset(Line_2, ' ', MAX_LINE);
+  int max_line = MAX_LINE;
+  memset(Line_1, ' ', max_line);
+  memset(Line_2, ' ', max_line);
   
   switch (mainMenuItem)
   {
     case mSetMode:
     {
       pout("mode");
-      snprintf(Line_1, MAX_LINE, "    Mode");
+      snprintf(Line_1, max_line, "    Mode");
       switch(shootingMode)
       {
         case modeBULB_A:
         {
-          snprintf(Line_2, MAX_LINE, "A.BULB on flash");
+          snprintf(Line_2, max_line, "A.BULB on flash");
           break;
         }
         case modeFAST_SHOOT_B:
         {
-          snprintf(Line_2, MAX_LINE, "B.Fast on flash");
+          snprintf(Line_2, max_line, "B.Fast on flash");
           break;
         }
         case modeBULB_C:
         {
-          snprintf(Line_2, MAX_LINE, "C.Seq. BULB");
+          snprintf(Line_2, max_line, "C.Seq. BULB");
           break;
         }
       }
@@ -218,42 +193,42 @@ void LCD_print_screen()
     case mSetTreshHold:
     {
       pout("tr");
-      snprintf(Line_1, MAX_LINE, "    Treshold");
-      snprintf(Line_2, MAX_LINE, "%d", treshHold);
+      snprintf(Line_1, max_line, "    Treshold");
+      snprintf(Line_2, max_line, "%d", treshHold);
       break;
     }    
     case mSetBulbA:
     {
       pout("BA");
-      snprintf(Line_1, MAX_LINE, "    Interval A");
-      snprintf(Line_2, MAX_LINE, "%d (millis)", bulbA);
+      snprintf(Line_1, max_line, "    Interval A");
+      snprintf(Line_2, max_line, "%d (millis)", bulbA);
       break;
     }    
     case mSetShootingTime:
     {
       pout("Sh ");
-      snprintf(Line_1, MAX_LINE, "    Shooting B");
-      snprintf(Line_2, MAX_LINE, "%d (millis)", shootingTimeB);
+      snprintf(Line_1, max_line, "    Shooting B");
+      snprintf(Line_2, max_line, "%d (millis)", shootingTimeB);
       break;
     }    
     case mSetBulbC:
     {
       pout("BC");
-      snprintf(Line_1, MAX_LINE, "    Interval C");
-      snprintf(Line_2, MAX_LINE, "%d (seconds)", bulbC);
+      snprintf(Line_1, max_line, "    Interval C");
+      snprintf(Line_2, max_line, "%d (seconds)", bulbC);
       break;
     }
     case mReset:
     {
       pout("BC");
-      snprintf(Line_1, MAX_LINE, "    Reset to default");
-      snprintf(Line_2, MAX_LINE, "");
+      snprintf(Line_1, max_line, "    Reset to default");
+      snprintf(Line_2, max_line, "");
       if ( SS_SELECTED == select_status && RS_YES == reset_status)
-        snprintf(Line_2, MAX_LINE, "   NO    >YES<  ");
+        snprintf(Line_2, max_line, "   NO    >YES<  ");
       else if ( SS_SELECTED == select_status && RS_NO == reset_status)
-        snprintf(Line_2, MAX_LINE, "  >NO<    YES  ");
+        snprintf(Line_2, max_line, "  >NO<    YES  ");
       else
-        snprintf(Line_2, MAX_LINE, "               ");
+        snprintf(Line_2, max_line, "               ");
       break;
     }
   }
@@ -275,26 +250,27 @@ void LCD_print_screen()
 
 void LCD_print_working_screen()
 {
-  memset(Line_1, ' ', MAX_LINE);
-  memset(Line_2, ' ', MAX_LINE);
+  int max_line = MAX_LINE;
+  memset(Line_1, ' ', max_line);
+  memset(Line_2, ' ', max_line);
   switch (shootingMode)
   {
     case modeBULB_A:
     {
-      snprintf(Line_1, MAX_LINE, "A.BULB on flash");
-      snprintf(Line_2, MAX_LINE, "Sens %d Int %d", 50 - treshHold, bulbA);
+      snprintf(Line_1, max_line, "A.BULB on flash");
+      snprintf(Line_2, max_line, "Sens %d Int %d", 50 - treshHold, bulbA);
       break;
     }
     case modeFAST_SHOOT_B:
     {
-      snprintf(Line_1, MAX_LINE, "B.Fast on flash");
-      snprintf(Line_2, MAX_LINE, "Sens %d Int %d", 50 - treshHold, shootingTimeB);
+      snprintf(Line_1, max_line, "B.Fast on flash");
+      snprintf(Line_2, max_line, "Sens %d Int %d", 50 - treshHold, shootingTimeB);
       break;
     }
     case modeBULB_C:
     {
-      snprintf(Line_1, MAX_LINE, "C.Seq. BULB");
-      snprintf(Line_2, MAX_LINE, "Int %d seconds", bulbC);
+      snprintf(Line_1, max_line, "C.Seq. BULB");
+      snprintf(Line_2, max_line, "Int %d seconds", bulbC);
       break;
     }
   }
@@ -303,13 +279,43 @@ void LCD_print_working_screen()
   line_out(0,1,Line_2);
 }
 
+////////////////////////////////////////////////////////////////////
+// MENU
+////////////////////////////////////////////////////////////////////
+
+int inc_menu (int menu_item, int max_items, int delta, int select_status_param)
+{
+  if (SS_SELECTED == select_status_param)
+  {
+    pout("before");
+    pout(menu_item);
+    pout("max_items");
+    pout(max_items);
+    pout("delta");
+    pout(delta);
+    menu_item = menu_item + delta;
+    if ( abs(delta) > menu_item) 
+    { 
+      menu_item = max_items;
+    }
+    else
+    {
+      menu_item = menu_item % (max_items + abs(delta));
+      menu_item = menu_item == 0?menu_item + abs(delta):menu_item;
+    }
+    pout("after");
+    pout(menu_item);
+  }
+  return menu_item;
+}
+
 void menu()
 {
   int key;
   int exit_loop = 0;
   int key_pressed = btnNONE;
-  int last_key_pressed = btnNONE;
-
+//  int last_key_pressed = btnNONE;
+  mainMenuItem = mSetMode;
   reset_status = RS_NO;
   select_status = SS_NONE;
   while ( 0 == exit_loop )
@@ -439,6 +445,21 @@ void menu()
   pout("exit menu");
 }
 
+////////////////////////////////////////////////////////////////////
+// KEYPAD FUNCTIONS
+////////////////////////////////////////////////////////////////////
+
+int read_keypad_button(int key_val)
+{
+  if (key_val > 1000) return btnNONE; 
+  if (key_val < 50)   return btnRIGHT;  
+  if (key_val < 195)  return btnUP; 
+  if (key_val < 380)  return btnDOWN; 
+  if (key_val < 555)  return btnLEFT; 
+  if (key_val < 790)  return btnSELECT;   
+  return btnNONE;  // when all others fail, return this...
+}
+
 int wait_for_keypress()
 {
   int exit_loop = 0;
@@ -447,13 +468,13 @@ int wait_for_keypress()
   int end_time = 0;
   while (exit_loop == 0)
   {  
-    key = read_LCD_buttons(analogRead(0));
+    key = read_keypad_button(analogRead(0));
     delay (10);
     start_time = millis();
-    if (key == read_LCD_buttons(analogRead(0)) && key != btnNONE)
+    if (key == read_keypad_button(analogRead(0)) && key != btnNONE)
     {
       delay(10);
-      while (read_LCD_buttons(analogRead(0)) != btnNONE)
+      while (read_keypad_button(analogRead(0)) != btnNONE)
       {
         end_time = millis();
         exit_loop = 1;
@@ -469,45 +490,14 @@ int wait_for_keypress()
   return key;
 }
 
-void setup() {
-  Serial.begin(9600);
-  pinMode(SHOOTER_PIN, OUTPUT);
-  set_LCD_setiing();
-  read_settings();
-  mainMenuItem = mSetMode;
-  LCD_print_screen();
-  menu();
-  LCD_print_working_screen();
-}
-
-int get_light_avg(int *lights)
-{
-  int light_avg = 0;
-  int light_acc = 0;
-  for (int i =0; i < MAX_LIGHTS; i++)
-  {
-    light_acc += lights[i];
-  }
-  
-  return (int) light_avg / MAX_LIGHTS;
-}
-
-void set_avg(int *lights, int avg_val)
-{
-  for (int i = 0; i < MAX_LIGHTS; i++ )
-  {
-    lights[i] = avg_val;
-  }
-}
-
+////////////////////////////////////////////////////////////////////
+// FUNCTIONAL
+////////////////////////////////////////////////////////////////////
 
 void long_exposure_on_flash()
 {
   pout("long_exposure_on_flash wait");
   int lightning_base = analogRead(TRIGGER_PIN);
-  int lightning_base_old = lightning_base;
-  int lights[MAX_LIGHTS];
-  //set_avg(lights, analogRead(TRIGGER_PIN));
   unsigned long int refresh_base_timer = millis();
   while (1)
   {
@@ -515,17 +505,17 @@ void long_exposure_on_flash()
     int newLightningVal = analogRead(TRIGGER_PIN);
     if (newLightningVal - lightning_base >= treshHold)
     {
-      pout(newLightningVal);
-      pout(lightning_base);
+      //pout(newLightningVal);
+      //pout(lightning_base);
       
-      pout("take poict flash long");
+      //pout("take poict flash long");
       take_picture(SHOOTER_PIN, bulbA, 500);
       lightning_base = analogRead(TRIGGER_PIN);
     }
     if (millis() - refresh_base_timer > BASE_UPDATE_INTERVAL)
     {
-      pout("10 sec");
-      pout(lightning_base);
+      //pout("10 sec");
+      //pout(lightning_base);
       lightning_base = newLightningVal;
       refresh_base_timer = millis();
     } 
@@ -535,13 +525,15 @@ void long_exposure_on_flash()
 
 void fast_shoots_on_flash()
 {
+  pout("fast_shoots_on_flash");
   int lightning_base = analogRead(TRIGGER_PIN);
+  
   while (1)
   {
     int newLightningVal = analogRead(TRIGGER_PIN);
     if (newLightningVal - lightning_base > treshHold)
     {
-      pout("take poict flash sort");
+      //pout("take poict flash short");
       take_picture(SHOOTER_PIN, shootingTimeB, 500);
     }
   }
@@ -563,6 +555,21 @@ void take_picture(byte PIN, unsigned long delay_between, unsigned long delay_aft
   delay(delay_between);
   digitalWrite(PIN, LOW);
   delay(delay_after);
+}
+
+////////////////////////////////////////////////////////////////////
+// ARDUINO
+////////////////////////////////////////////////////////////////////
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(SHOOTER_PIN, OUTPUT);
+  set_LCD_setiing();
+  read_settings();
+  
+  LCD_print_screen();
+  menu();
+  LCD_print_working_screen();
 }
 
 void loop() {
