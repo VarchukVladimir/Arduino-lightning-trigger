@@ -71,7 +71,7 @@ char Line_1[MAX_LINE];
 char Line_2[MAX_LINE];
 
 #define DEBUG
-//#undef DEBUG
+#undef DEBUG
 #ifdef DEBUG
 #define pout(STR) Serial.println((STR))
 #else
@@ -315,7 +315,7 @@ void menu()
   int exit_loop = 0;
   int key_pressed = btnNONE;
   //  int last_key_pressed = btnNONE;
-  mainMenuItem = mSetMode;
+  
   reset_status = RS_NO;
   select_status = SS_NONE;
   while ( 0 == exit_loop )
@@ -561,13 +561,30 @@ void take_picture(byte PIN, unsigned long delay_between, unsigned long delay_aft
 // ARDUINO
 ////////////////////////////////////////////////////////////////////
 
+#define FASTADC 1
+
+// defines for setting and clearing register bits
+#ifndef cbi
+#define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
+#endif
+#ifndef sbi
+#define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
+#endif
+
 void setup() {
+  
+#if FASTADC
+  // set prescale to 16
+  sbi(ADCSRA,ADPS2) ;
+  cbi(ADCSRA,ADPS1) ;
+  cbi(ADCSRA,ADPS0) ;
+#endif
   Serial.begin(9600);
   pinMode(SHOOTER_PIN, OUTPUT);
   set_LCD_setiing();
   read_settings();
-
   LCD_print_screen();
+  mainMenuItem = mSetMode;
   menu();
   LCD_print_working_screen();
 }
