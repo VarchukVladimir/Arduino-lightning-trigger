@@ -501,25 +501,23 @@ void long_exposure_on_flash()
   unsigned long int refresh_base_timer = millis();
   while (1)
   {
-    //
     int newLightningVal = analogRead(TRIGGER_PIN);
     if (newLightningVal - lightning_base >= treshold)
     {
-      //pout(newLightningVal);
-      //pout(lightning_base);
+      pout(newLightningVal);
+      pout(lightning_base);
 
-      //pout("take poict flash long");
+      pout("take poict flash long");
       take_picture(SHOOTER_PIN, bulbA, 500);
       lightning_base = analogRead(TRIGGER_PIN);
     }
     if (millis() - refresh_base_timer > BASE_UPDATE_INTERVAL)
     {
-      //pout("10 sec");
-      //pout(lightning_base);
+      pout("10 sec");
+      pout(lightning_base);
       lightning_base = newLightningVal;
       refresh_base_timer = millis();
     }
-    delay(1000);
   }
 }
 
@@ -579,12 +577,14 @@ void setup() {
   cbi(ADCSRA,ADPS1) ;
   cbi(ADCSRA,ADPS0) ;
 #endif
+#ifdef DEBUG
   Serial.begin(9600);
+#endif
   pinMode(SHOOTER_PIN, OUTPUT);
   set_LCD_setiing();
   read_settings();
-  LCD_print_screen();
   mainMenuItem = mSetMode;
+  LCD_print_screen();
   menu();
   LCD_print_working_screen();
 }
