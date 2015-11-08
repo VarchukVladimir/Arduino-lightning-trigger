@@ -339,6 +339,8 @@ void print_timer_screen(struct display_time *dt)
       }
   }
   lcd.clear();
+  pout(Line_1);
+  pout(Line_2);
   line_out(0, 0, Line_1);
   line_out(0, 1, Line_2);
   
@@ -618,14 +620,16 @@ void sequential_long_exposure()
   {
     pout("take pict seq long");
     pout (SHOOTER_PIN);
-    take_picture(SHOOTER_PIN, bulbC * 1000L, 2000);
+//    take_picture(SHOOTER_PIN, bulbC * 1000L, 2000);
+    take_picture_display_time(SHOOTER_PIN, bulbC * 1000L, 2000,1000);
   }
 }
 
 void long_exposure()
 {
   pout("take pict long exposure");
-  take_picture(SHOOTER_PIN, expD * 60000L,1000);
+  take_picture_display_time(SHOOTER_PIN, expD * 60000L,1000,1000);
+  //take_picture(SHOOTER_PIN, expD * 60000L,1000);
 }
 
 void take_picture(byte PIN, unsigned long delay_between, unsigned long delay_after)
@@ -644,33 +648,33 @@ void inctime (struct display_time *dt, int inc_val)
     dt->minutes = dt->minutes + dt->seconds/60;
     dt->seconds = dt->seconds % 60;
   }
-  else if (dt->seconds >= 60){
+  else if (dt->seconds < 0){
     dt->minutes = dt->minutes - (abs(dt->seconds/60) + 1);
-    dt->seconds = abs(dt->seconds) % 60;
+    dt->seconds = 60-abs(dt->seconds) % 60;
   }
 }
 
 void decode_time(struct display_time *dt, unsigned long int time_ms)
 {
-  dt->minutes = time_ms/(1000*60);
-  dt->seconds = (time_ms/1000) % 60;
+  dt->minutes = time_ms/(1000L*60L);
+  dt->seconds = (time_ms/1000L) % 60L;
 }
 
 void display_time_to_str(struct display_time *dt, char *str)
 {
-  snprintf(str, 6, "%0d:%0d", dt->minutes, dt->seconds);
+  snprintf(str, 6, "%d:%.02d", dt->minutes, dt->seconds);
 }
 
 void take_picture_display_time(byte PIN, unsigned long delay_between, unsigned long delay_after, unsigned long int show_time_interval)
 {
   unsigned long int start_time = millis();
   struct display_time *dt = (struct display_time *)malloc(sizeof(struct display_time));
-  decode_time (dt, delay_between);
+  //decode_time (dt, delay_between);
   digitalWrite(PIN, HIGH);
   while (delay_between > millis () - start_time)
   {
-    inctime(dt,-1);
-    
+    decode_time(dt, delay_between - (millis () - start_time));
+    print_timer_screen(dt);
     delay(show_time_interval);
   }
   delay(delay_between);
