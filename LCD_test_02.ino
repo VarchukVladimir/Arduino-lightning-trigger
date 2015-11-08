@@ -81,7 +81,7 @@ char Line_1[MAX_LINE];
 char Line_2[MAX_LINE];
 
 #define DEBUG
-//#undef DEBUG
+#undef DEBUG
 #ifdef DEBUG
 #define pout(STR) Serial.println((STR))
 #else
