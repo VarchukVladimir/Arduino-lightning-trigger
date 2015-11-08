@@ -620,7 +620,6 @@ void sequential_long_exposure()
   {
     pout("take pict seq long");
     pout (SHOOTER_PIN);
-//    take_picture(SHOOTER_PIN, bulbC * 1000L, 2000);
     take_picture_display_time(SHOOTER_PIN, bulbC * 1000L, 2000,1000);
   }
 }
@@ -629,7 +628,6 @@ void long_exposure()
 {
   pout("take pict long exposure");
   take_picture_display_time(SHOOTER_PIN, expD * 60000L,1000,1000);
-  //take_picture(SHOOTER_PIN, expD * 60000L,1000);
 }
 
 void take_picture(byte PIN, unsigned long delay_between, unsigned long delay_after)
@@ -669,7 +667,6 @@ void take_picture_display_time(byte PIN, unsigned long delay_between, unsigned l
 {
   unsigned long int start_time = millis();
   struct display_time *dt = (struct display_time *)malloc(sizeof(struct display_time));
-  //decode_time (dt, delay_between);
   digitalWrite(PIN, HIGH);
   while (delay_between > millis () - start_time)
   {
@@ -677,7 +674,6 @@ void take_picture_display_time(byte PIN, unsigned long delay_between, unsigned l
     print_timer_screen(dt);
     delay(show_time_interval);
   }
-  delay(delay_between);
   digitalWrite(PIN, LOW);
   delay(delay_after);
 }
