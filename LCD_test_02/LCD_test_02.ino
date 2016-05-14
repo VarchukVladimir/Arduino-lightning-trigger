@@ -620,7 +620,7 @@ void sequential_long_exposure()
   {
     pout("take pict seq long");
     pout (SHOOTER_PIN);
-    take_picture_display_time(SHOOTER_PIN, bulbC * 1000L, 2000,1000);
+    take_picture_display_time(SHOOTER_PIN, bulbC * 1000L, 12000L,1000);
   }
 }
 
